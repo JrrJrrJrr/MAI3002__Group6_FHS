@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import base64
 
 st.set_page_config(
     page_title="Covid Data Analysis",
@@ -19,10 +20,49 @@ st.sidebar.markdown("""<div style="font-size: 17px;">✍️ <strong>Authors:</st
 st.sidebar.write("---")
 st.sidebar.markdown("""📅 March 9th, 2024""")
 
-if os.path.exists("Ulogo.png"):
-    st.sidebar.image("Ulogo.png")
-else:
-    st.sidebar.write("")
+
+# Helper: robust image display with fallbacks to placeholders
+def show_sidebar_logo():
+    # Try common logo files then fall back to placeholder in `placeholders/`
+    for name in ("Ulogo.png", "Ulogo.svg", "Ulogo.jpg", "Ulogo.jpeg"):
+        if os.path.exists(name):
+            st.sidebar.image(name)
+            return
+    placeholder = os.path.join("placeholders", "Ulogo.svg")
+    if os.path.exists(placeholder):
+        st.sidebar.image(placeholder)
+    else:
+        st.sidebar.write("")
+
+
+def show_image_any(base_path, caption=None, use_column_width=True):
+    """Display image by trying several extensions and a placeholders/ fallback.
+    `base_path` can be a path without extension (e.g. './covid') or a full filename.
+    """
+    exts = ["", ".png", ".svg", ".jpg", ".jpeg", ".gif"]
+    # if a full filename was given and exists, show it directly
+    if os.path.exists(base_path):
+        st.image(base_path, caption=caption, use_column_width=use_column_width)
+        return
+    # try appending extensions
+    for e in exts:
+        p = base_path + e
+        if os.path.exists(p):
+            st.image(p, caption=caption, use_column_width=use_column_width)
+            return
+    # final fallback to placeholders/<basename>.svg
+    fallback = os.path.join("placeholders", os.path.basename(base_path) + ".svg")
+    if os.path.exists(fallback):
+        st.image(fallback, caption=caption, use_column_width=use_column_width)
+        return
+    # give a minimal text fallback so app doesn't crash
+    if caption:
+        st.write(caption)
+    else:
+        st.write("")
+
+# show the sidebar logo now
+show_sidebar_logo()
 
 
 ############################# start page content #############################
@@ -69,10 +109,7 @@ st.sidebar.markdown("""<div style="font-size: 17px;">✍️ <strong>Authors:</st
 st.sidebar.write("---")
 st.sidebar.markdown("""📅 March 9th, 2024""")
 
-if os.path.exists("Ulogo.png"):
-    st.sidebar.image("Ulogo.png")
-else:
-    st.sidebar.write("")
+show_sidebar_logo()
 
 # def add_side_title():
 #     st.markdown(
@@ -116,14 +153,8 @@ def get_image_base64(path):
     with open(path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode()
 
-# Path to image
-image_path = "./covid.png"
-
-# Convert your image file to a base64 string
-image_base64 = get_image_base64(image_path)
-image_html = f'<img src="data:image/png;base64,{image_base64}" class="custom-img">'
-
-st.image("./covid.png")
+# Display covid image with fallback placeholder
+show_image_any("./covid", caption=None)
 
 # RESEARCH QUESTION
 
@@ -147,12 +178,7 @@ st.sidebar.markdown("""<div style="font-size: 17px;">✍️ <strong>Authors:</st
 
 st.sidebar.write("---")
 st.sidebar.markdown("""📅 March 9th, 2024""")
-if os.path.exists("Ulogo.png"):
-    st.sidebar.image("Ulogo.png")
-elif os.path.exists("Ulogo.svg"):
-    st.sidebar.image("Ulogo.svg")
-else:
-    st.sidebar.write("")
+    show_sidebar_logo()
 
 # def add_side_title():
 #     st.markdown(
@@ -212,10 +238,7 @@ st.sidebar.markdown("""<div style="font-size: 17px;">✍️ <strong>Authors:</st
 
 st.sidebar.write("---")
 st.sidebar.markdown("""📅 March 9th, 2024""")
-if os.path.exists("Ulogo.png"):
-    st.sidebar.image("Ulogo.png")
-else:
-    st.sidebar.write("")
+show_sidebar_logo()
 
 ############################# start page content #############################
 
@@ -264,7 +287,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.image("./cdc.png")
+show_image_any("./cdc", caption=None)
 
 # DATA EXPLORATION
 
@@ -290,12 +313,7 @@ st.sidebar.markdown("""<div style="font-size: 17px;">✍️ <strong>Authors:</st
 
 st.sidebar.write("---")
 st.sidebar.markdown("""📅 March 9th, 2024""")
-if os.path.exists("Ulogo.png"):
-    st.sidebar.image("Ulogo.png")
-elif os.path.exists("Ulogo.svg"):
-    st.sidebar.image("Ulogo.svg")
-else:
-    st.sidebar.write("")
+show_sidebar_logo()
 
 
 ############################# start page content #############################
@@ -719,12 +737,7 @@ st.sidebar.markdown("""<div style="font-size: 17px;">✍️ <strong>Authors:</st
 
 st.sidebar.write("---")
 st.sidebar.markdown("""📅 March 9th, 2024""")
-if os.path.exists("Ulogo.png"):
-    st.sidebar.image("Ulogo.png")
-elif os.path.exists("Ulogo.svg"):
-    st.sidebar.image("Ulogo.svg")
-else:
-    st.sidebar.write("")
+show_sidebar_logo()
 
 
 ############################# start page content #############################
@@ -778,12 +791,7 @@ st.sidebar.markdown("""<div style="font-size: 17px;">✍️ <strong>Authors:</st
 
 st.sidebar.write("---")
 st.sidebar.markdown("""📅 March 9th, 2024""")
-if os.path.exists("Ulogo.png"):
-    st.sidebar.image("Ulogo.png")
-elif os.path.exists("Ulogo.svg"):
-    st.sidebar.image("Ulogo.svg")
-else:
-    st.sidebar.write("")
+show_sidebar_logo()
 
 # def add_side_title():
 #     st.markdown(
