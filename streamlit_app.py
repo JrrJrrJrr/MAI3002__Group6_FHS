@@ -178,7 +178,7 @@ st.sidebar.markdown("""<div style="font-size: 17px;">✍️ <strong>Authors:</st
 
 st.sidebar.write("---")
 st.sidebar.markdown("""📅 March 9th, 2024""")
-    show_sidebar_logo()
+show_sidebar_logo()
 
 # def add_side_title():
 #     st.markdown(
@@ -467,12 +467,11 @@ fig.update_layout(
 
 # Adjust color scale bar
 fig.update_coloraxes(colorbar=dict(
-    title='Total Cases',  
-    thickness=20,  
-    len=0.75, 
+    title=dict(text='Total Cases', font=dict(color='black')),
+    thickness=20,
+    len=0.75,
     bgcolor='rgba(255,255,255,0.5)',
-    tickfont=dict(color='black'),  
-    titlefont=dict(color='black')  
+    tickfont=dict(color='black'),
 ))
 
 
