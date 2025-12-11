@@ -716,166 +716,152 @@ def page_model_detail(selected_model_name, threshold, all_model_outputs, model_r
         if not np.isnan(cv_best_auc):
             st.metric("Best CV AUC", f"{cv_best_auc:.3f}")
         else:
-            st.metric("Best CV AUC", "–")
+            # Use pipeline (preprocessing + classifier)
+            pipeline = Pipeline([
+                ('preprocessor', preprocessor),
+                ('clf', LogisticRegression(max_iter=200, class_weight='balanced'))
+            ])
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42, stratify=y)
+            pipeline.fit(X_train, y_train)
+            y_pred = pipeline.predict(X_test)
 
-    st.markdown("---")
-    st.subheader("Threshold analysis")
+        # Compute metrics
+        acc = accuracy_score(y_test, y_pred)
+        prec = precision_score(y_test, y_pred, zero_division=0)
+        rec = recall_score(y_test, y_pred, zero_division=0)
+        f1 = f1_score(y_test, y_pred, zero_division=0)
+        cm = confusion_matrix(y_test, y_pred)
 
-    y_test = np.asarray(res["y_test"])
-    y_proba = np.asarray(res["y_proba"])
+        st.subheader("Model Evaluation")
+        st.write(f"Rows used for modeling: {df_model.shape[0]}")
+        st.write(f"Accuracy: {acc:.4f}")
+        st.write(f"Precision: {prec:.4f}")
+        st.write(f"Recall (sensitivity): {rec:.4f}")
+        st.write(f"F1 score: {f1:.4f}")
 
-    thr_metrics = compute_threshold_metrics(y_test, y_proba, threshold)
-    cm = thr_metrics["cm"]
+        st.write("Confusion Matrix:")
+        st.write(cm)
 
-    c1, c2 = st.columns(2)
+        st.subheader("Classification Report")
+        st.text(classification_report(y_test, y_pred, zero_division=0))
 
-    with c1:
-        st.write(f"**Confusion matrix at threshold = {threshold:.2f}**")
+except Exception as e:
+    # If sklearn or other packages aren't installed, show a friendly message but do not crash the app
+    st.error(f"Modeling section encountered an error: {e}")
+    st.info("If this is due to missing packages, install them: `pip install scikit-learn imbalanced-learn` and restart the app.")
 
-        fig_cm, ax_cm = plt.subplots(figsize=(4, 4))
-        disp = ConfusionMatrixDisplay(
-            confusion_matrix=cm,
-            display_labels=[0, 1],
-        )
-        disp.plot(cmap=crest_cmap, colorbar=False, ax=ax_cm)
-        ax_cm.set_title("Confusion matrix")
-        plt.tight_layout()
-        st.pyplot(fig_cm)
+# FINDINGS 
 
-    with c2:
-        st.write("**Metrics at this threshold**")
-        st.markdown(
-            f"""
-            - Accuracy: **{thr_metrics['accuracy']:.3f}**
-            - Sensitivity (recall for CVD=1): **{thr_metrics['sensitivity']:.3f}**
-            - Specificity (CVD=0): **{thr_metrics['specificity']:.3f}**
-            - ROC AUC (unchanged): **{thr_metrics['roc_auc']:.3f}**
-            """
-        )
+import streamlit as st
 
-    st.markdown("---")
-    st.subheader("ROC curve (test set)")
+st.set_page_config(
+    page_title="Covid Data Analysis - Findings & Conclusion",
+    page_icon="📊",
+    #layout="wide"   
+)
+#st.markdown("""<style>body {zoom: 1.4;  /* Adjust this value as needed */}</style>""", unsafe_allow_html=True)
 
-    fpr = np.asarray(res["fpr"])
-    tpr = np.asarray(res["tpr"])
+st.sidebar.markdown("""<div style="font-size: 17px;">✍️ <strong>Authors:</strong></div> 
+\n&nbsp;                                  
+<a href="https://www.linkedin.com/in/amralshatnawi/" style="display: inline-block; padding: 5px 7px; background-color: #871212; color: white; text-align: center; text-decoration: none; font-size: 15px; border-radius: 4px;">&nbsp;&nbsp;Amr Alshatnawi&nbsp;&nbsp;</a><br>             
 
-    fig_roc, ax_roc = plt.subplots(figsize=(5, 5))
-    ax_roc.plot([0, 1], [0, 1], "k--", label="Chance")
-    ax_roc.plot(fpr, tpr, label=selected_model_name, color=crest_colors[-1])
-    ax_roc.set_xlabel("False positive rate")
-    ax_roc.set_ylabel("True positive rate (Recall)")
-    ax_roc.set_title("ROC curve")
-    ax_roc.legend(loc="lower right")
-    plt.tight_layout()
-    st.pyplot(fig_roc)
+<a href="https://www.linkedin.com/in/hailey-pangburn" style="display: inline-block; padding: 5px 7px; background-color: #871212; color: white; text-align: center; text-decoration: none; font-size: 15px; border-radius: 4px;">&nbsp;&nbsp;Hailey Pangburn&nbsp;&nbsp;</a><br>             
+                    
+<a href="mailto:mcmasters@uchicago.edu" style="display: inline-block; padding: 5px 7px; background-color: #871212; color: white; text-align: center; text-decoration: none; font-size: 15px; border-radius: 4px;">Richard McMasters</a><br>
+""", unsafe_allow_html=True)
 
-    st.markdown("---")
-    st.subheader("Classification report (threshold 0.5)")
-
-    report_dict = res.get("classification_report_dict", None)
-    if report_dict is not None:
-        report_df = pd.DataFrame(report_dict).T
-        num_cols = report_df.select_dtypes(include=[float, int]).columns
-        report_df[num_cols] = report_df[num_cols].applymap(lambda x: round(x, 3))
-        st.dataframe(report_df, use_container_width=True)
-    else:
-        y_pred_default = (y_proba >= 0.5).astype(int)
-        report_str = classification_report(y_test, y_pred_default)
-        st.text(report_str)
+st.sidebar.write("---")
+st.sidebar.markdown("""📅 March 9th, 2024""")
+show_sidebar_logo()
 
 
-# ============================================================
-# MAIN APP
-# ============================================================
+############################# start page content #############################
 
-def main():
-    st.set_page_config(
-        page_title="MAI3002 Group 6 – Framingham ΔPP models",
-        layout="wide",
-    )
-
-    st.title("Framingham ΔPP → CVD risk (MAI3002 – Group 6)")
-
-    # Load project outputs
-    try:
-        analytic_df, model_results, all_model_outputs = load_project_outputs()
-    except Exception as e:
-        st.error(
-            "Could not load project output files. "
-            "Make sure `analytic_dataset.csv`, `model_results.csv`, and "
-            "`all_model_outputs.pkl` are in the same folder as this app."
-        )
-        st.exception(e)
-        st.stop()
-
-    # Load raw dataset
-    try:
-        raw_df = load_raw_framingham()
-    except Exception as e:
-        st.error("Could not load raw Framingham dataset from GitHub.")
-        st.exception(e)
-        st.stop()
-
-    # Sidebar navigation
-    st.sidebar.header("Navigation")
-
-    pages = {
-        "Overview & research question": "overview",
-        "EDA: raw Framingham data (long)": "eda_raw",
-        "ΔPP & analytic dataset": "delta_pp",
-        "Models: global comparison": "models_overview",
-        "Models: detailed view & threshold": "model_detail",
-    }
-
-    page_name = st.sidebar.radio("Go to", list(pages.keys()))
-    page_key = pages[page_name]
-
-    # Extra sidebar controls for model detail page
-    selected_model_name = None
-    threshold = 0.5
-
-    if page_key == "model_detail":
-        st.sidebar.markdown("---")
-        st.sidebar.subheader("Model & threshold")
-
-        model_names = sorted(list(all_model_outputs.keys()))
-        if len(model_names) == 0:
-            st.sidebar.error("No models found in all_model_outputs.")
-        else:
-            selected_model_name = st.sidebar.selectbox(
-                "Choose model",
-                options=model_names,
-                index=0,
-            )
-
-        threshold = st.sidebar.slider(
-            "Decision threshold for CVD = 1",
-            min_value=0.1,
-            max_value=0.9,
-            value=0.5,
-            step=0.05,
-        )
-
-    # Route to selected page
-    if page_key == "overview":
-        page_overview(raw_df, analytic_df, model_results)
-    elif page_key == "eda_raw":
-        page_eda_raw(raw_df)
-    elif page_key == "delta_pp":
-        page_delta_pp(analytic_df)
-    elif page_key == "models_overview":
-        page_models_overview(model_results)
-    elif page_key == "model_detail":
-        if selected_model_name is None:
-            st.error("No model selected.")
-        else:
-            page_model_detail(
-                selected_model_name=selected_model_name,
-                threshold=threshold,
-                all_model_outputs=all_model_outputs,
-                model_results=model_results,
-            )
+st.title("Findings & Conclusion")
+st.divider()
 
 
-if __name__ == "__main__":
-    main()
+
+st.markdown("""
+
+Our analysis aimed to uncover patterns in COVID-19 case counts and mortality outcomes, focusing on the roles of age, gender, and case year.
+Initially, we explored the distribution of COVID-19 cases across various age groups. The data revealed a significant deviation in the 18 to 49 age group,
+which displayed a disproportionately high number of cases. Utilizing the Chi-square goodness-of-fit test, we determined this variance to be statistically
+significant, with a p-value less than 0.05. This finding suggests certain age groups, notably the 18 to 49 demographic, are more susceptible to contracting
+COVID-19 relative to their population size, potentially due to factors like social behavior and employment types.
+
+In examining COVID-19 mortality outcomes, logistic regression analysis highlighted that gender, age group, and case year are significant predictors of mortality,
+with all predictors showing statistical significance (p-values < 0.05). Despite an initial dataset imbalance, our resampling strategy, which included both
+undersampling and oversampling techniques, allowed us to maintain the model's overall significance while revealing an increased baseline probability of death
+in a more balanced dataset context. This adjustment suggests a refined understanding of mortality risk factors. However, the model's precision at 10.62%
+indicates a high rate of false positives, a challenge balanced by its strong sensitivity (81.44%) in accurately identifying actual deaths. This emphasizes
+the model's utility in critical public health scenarios despite its need for further optimization to reduce false positives and improve the F1 score (0.1879).
+
+In conclusion, our findings confirm the significant impact of gender, age, and case year on COVID-19 mortality, underscoring the importance of targeted public
+health strategies. While the model presents areas for improvement, its ability to predict true positives remains a valuable asset in managing the pandemic
+response, highlighting the potential for further refinement to enhance its predictive accuracy and applicability.
+
+
+""")
+
+# REFERENCES
+
+import streamlit as st
+
+st.set_page_config(
+    page_title="Covid Data Analysis - References",
+    page_icon="📊",
+    #layout="wide"   
+)
+#st.markdown("""<style>body {zoom: 1.4;  /* Adjust this value as needed */}</style>""", unsafe_allow_html=True)
+
+st.sidebar.markdown("""<div style="font-size: 17px;">✍️ <strong>Authors:</strong></div> 
+\n&nbsp;                                  
+<a href="https://www.linkedin.com/in/amralshatnawi/" style="display: inline-block; padding: 5px 7px; background-color: #871212; color: white; text-align: center; text-decoration: none; font-size: 15px; border-radius: 4px;">&nbsp;&nbsp;Amr Alshatnawi&nbsp;&nbsp;</a><br>             
+
+<a href="https://www.linkedin.com/in/hailey-pangburn" style="display: inline-block; padding: 5px 7px; background-color: #871212; color: white; text-align: center; text-decoration: none; font-size: 15px; border-radius: 4px;">&nbsp;&nbsp;Hailey Pangburn&nbsp;&nbsp;</a><br>             
+                    
+<a href="mailto:mcmasters@uchicago.edu" style="display: inline-block; padding: 5px 7px; background-color: #871212; color: white; text-align: center; text-decoration: none; font-size: 15px; border-radius: 4px;">Richard McMasters</a><br>
+""", unsafe_allow_html=True)
+
+st.sidebar.write("---")
+st.sidebar.markdown("""📅 March 9th, 2024""")
+show_sidebar_logo()
+
+# def add_side_title():
+#     st.markdown(
+#         """
+#         <style>
+#             [data-testid="stSidebarNav"]::before {
+#                 content:"MSBI 32000 Winter 2024";
+#                 margin-left: 20px;
+#                 margin-top: 20px;
+#                 font-size: 25px;
+#                 position: relative;
+#                 top: 80px;
+#             }
+#         </style>
+#         """,
+#         unsafe_allow_html=True,
+#     )
+
+# add_side_title()
+
+############################# start page content #############################
+
+st.title("References")
+st.divider()
+
+st.markdown("""
+1. Brownlee, J. (2021, March 16). Smote for imbalanced classification with python. MachineLearningMastery.com. https://machinelearningmastery.com/smote-oversampling-for-imbalanced-classification/ 
+            
+2. Centers for Disease Control and Prevention. (n.d.-a). About covid-19. Centers for Disease Control and Prevention. https://www.cdc.gov/coronavirus/2019-ncov/your-health/about-covid-19.html#:~:text=COVID%2D19%20(coronavirus%20disease%202019,%2C%20the%20flu%2C%20or%20pneumonia. 
+            
+3. Centers for Disease Control and Prevention. (n.d.-b). Covid-19 case surveillance public use data with geography. Centers for Disease Control and Prevention. https://data.cdc.gov/Case-Surveillance/COVID-19-Case-Surveillance-Public-Use-Data-with-Ge/n8mc-b4w4/about_data 
+            
+4. Coronavirus cases:. Worldometer. (n.d.). https://www.worldometers.info/coronavirus/ 
+            
+5. Randomundersampler#. RandomUnderSampler - Version 0.12.0. (n.d.). https://imbalanced-learn.org/stable/references/generated/imblearn.under_sampling.RandomUnderSampler.html 
+            
+6. United States population by age - 2023 united states age demographics. Neilsberg. (n.d.). https://www.neilsberg.com/insights/united-states-population-by-age/#pop-by-age 
+""")
