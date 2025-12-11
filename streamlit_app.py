@@ -716,34 +716,37 @@ def page_model_detail(selected_model_name, threshold, all_model_outputs, model_r
         if not np.isnan(cv_best_auc):
             st.metric("Best CV AUC", f"{cv_best_auc:.3f}")
         else:
-            # Use pipeline (preprocessing + classifier)
-            pipeline = Pipeline([
-                ('preprocessor', preprocessor),
-                ('clf', LogisticRegression(max_iter=200, class_weight='balanced'))
-            ])
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42, stratify=y)
-            pipeline.fit(X_train, y_train)
-            y_pred = pipeline.predict(X_test)
+            st.metric("Best CV AUC", "–")
 
-        # Compute metrics
-        acc = accuracy_score(y_test, y_pred)
-        prec = precision_score(y_test, y_pred, zero_division=0)
-        rec = recall_score(y_test, y_pred, zero_division=0)
-        f1 = f1_score(y_test, y_pred, zero_division=0)
-        cm = confusion_matrix(y_test, y_pred)
+try:
+    # Use pipeline (preprocessing + classifier)
+    pipeline = Pipeline([
+        ('preprocessor', preprocessor),
+        ('clf', LogisticRegression(max_iter=200, class_weight='balanced'))
+    ])
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42, stratify=y)
+    pipeline.fit(X_train, y_train)
+    y_pred = pipeline.predict(X_test)
 
-        st.subheader("Model Evaluation")
-        st.write(f"Rows used for modeling: {df_model.shape[0]}")
-        st.write(f"Accuracy: {acc:.4f}")
-        st.write(f"Precision: {prec:.4f}")
-        st.write(f"Recall (sensitivity): {rec:.4f}")
-        st.write(f"F1 score: {f1:.4f}")
+    # Compute metrics
+    acc = accuracy_score(y_test, y_pred)
+    prec = precision_score(y_test, y_pred, zero_division=0)
+    rec = recall_score(y_test, y_pred, zero_division=0)
+    f1 = f1_score(y_test, y_pred, zero_division=0)
+    cm = confusion_matrix(y_test, y_pred)
 
-        st.write("Confusion Matrix:")
-        st.write(cm)
+    st.subheader("Model Evaluation")
+    st.write(f"Rows used for modeling: {df_model.shape[0]}")
+    st.write(f"Accuracy: {acc:.4f}")
+    st.write(f"Precision: {prec:.4f}")
+    st.write(f"Recall (sensitivity): {rec:.4f}")
+    st.write(f"F1 score: {f1:.4f}")
 
-        st.subheader("Classification Report")
-        st.text(classification_report(y_test, y_pred, zero_division=0))
+    st.write("Confusion Matrix:")
+    st.write(cm)
+
+    st.subheader("Classification Report")
+    st.text(classification_report(y_test, y_pred, zero_division=0))
 
 except Exception as e:
     # If sklearn or other packages aren't installed, show a friendly message but do not crash the app
