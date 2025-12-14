@@ -647,8 +647,8 @@ This indicates that ΔPP does contribute to some predictive signal, but overall 
 A multivariable approach is more realistic than using ΔPP alone.
 
 ### Subquestion 1 (sex differences)
-We used an interaction term (ΔPP × sex). If non-significant, it suggests
-no evidence that the ΔPP slope differs between women and men in our model.
+We used an interaction term (ΔPP × sex). 
+Non-significant -> it suggested no statistical evidence for sex effect modification in our model.
 
 ### Subquestion 2 (clinical threshold)
 Threshold exploration shows the typical trade-off:
