@@ -358,7 +358,7 @@ There is a **mean** increase of **3.87** mmHg (and a **median** of **3.0**).
 This indicates that, on average, pulse pressure is widening between visits. 
 This is biologically consistent with the aging process, as arteries tend to stiffen over time, naturally increasing pulse pressure in the general population.
 
-Remarkable is a **standard deviation** of **12.7**. This value is large relative to the mean.
+Remarkable is a **standard deviation** of **12.23**. This value is large relative to the mean.
 It tells us that although the mean increase is modest, individual changes in pulse pressure vary widely.
 This high variance suggests that ΔPP is a *discriminating* feature, which is beneficial for the model. 
 If ΔPP changed by the same amount for every participant, the variable would have no predictive power.
@@ -372,6 +372,12 @@ If ΔPP changed by the same amount for every participant, the variable would hav
     plt.tight_layout()
     st.pyplot(fig)
 
+    st.markdown(
+        """
+The distribution is slightly skewed to the right and displays this wide variance. 
+"""
+    )
+
     st.markdown("---")
     st.subheader("ΔPP vs CVD")
     if "CVD" in analytic_df.columns:
@@ -382,7 +388,13 @@ If ΔPP changed by the same amount for every participant, the variable would hav
         ax.set_title("ΔPP by CVD outcome")
         plt.tight_layout()
         st.pyplot(fig)
-
+        
+    st.markdown(
+        """
+The CVD group shows a slightly higher median increase in pulse pressure and greater variability.
+"""
+    )
+    
     if "V1_SEX" in analytic_df.columns and "CVD" in analytic_df.columns:
         fig, ax = plt.subplots(figsize=(7, 4))
         sns.boxplot(data=analytic_df, x="V1_SEX", y="DELTA_PP", hue="CVD", ax=ax)
@@ -391,6 +403,13 @@ If ΔPP changed by the same amount for every participant, the variable would hav
         ax.set_title("ΔPP by sex and CVD")
         plt.tight_layout()
         st.pyplot(fig)
+
+    st.markdown(
+        """
+This stays consistent if we stratify by gender. 
+Independent of sex, participants who developed CVD show consistently larger increases in pulse pressure.
+"""
+    )
 
     st.markdown("---")
     st.subheader("Correlations (baseline + ΔPP)")
@@ -408,6 +427,14 @@ If ΔPP changed by the same amount for every participant, the variable would hav
         ax.set_title("Correlation matrix")
         plt.tight_layout()
         st.pyplot(fig)
+
+    st.markdown(
+        """
+This **correlation matrix** shows that ΔPP provides **added value**. 
+While baseline systolic and diastolic BP are strongly correlated (as expected), ΔPP shows low correlations with baseline BP and age. 
+This indicates that ΔPP captures an independent physiological change over time, rather than duplicating baseline information, making it a meaningful and informative feature for the model.
+"""
+    )
 
     st.markdown("---")
     st.subheader("Interactive scatter")
