@@ -330,7 +330,9 @@ def page_delta_pp(analytic_df):
 
     st.markdown(
         """
-The **change in pulse pressure** over time (ΔPP) can be a *predictor* of future CVD events. A significant increase or decrease in PP between visits could indicate changes in cardiovascular health status. The focus is on the change between visit 1 and visit 2 to predict CVD outcomes at visit 3.
+The **change in pulse pressure** over time (ΔPP) can be a *predictor* of future CVD events. 
+A significant increase or decrease in PP between visits could indicate changes in cardiovascular health status. 
+The focus is on the change between visit 1 and visit 2 to predict CVD outcomes at visit 3.
 
 The final analytic dataset represents individuals with:
 * Complete BP data at Visits 1 & 2 (to compute ΔPP)
@@ -347,8 +349,13 @@ The final analytic dataset represents individuals with:
             st.write(f"CVD prevalence: **{prev:.1f}%**")
 
     st.markdown("---")
-    st.subheader("ΔPP distribution")
+    st.subheader("ΔPP summary statistics ")
     st.write(analytic_df["DELTA_PP"].describe().round(2))
+
+    st.markdown(
+        """
+a mean increase of 3.82 mmHg (and a median of 3.0). 
+This indicates that, on average, Pulse Pressure is widening between visits. This is biologically consistent with the aging process, as arteries tend to stiffen over time, naturally increasing pulse pressure in the general population.
 
     fig, ax = plt.subplots(figsize=(6, 4))
     sns.histplot(analytic_df["DELTA_PP"], bins=30, kde=True, ax=ax)
