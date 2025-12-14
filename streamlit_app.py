@@ -623,7 +623,18 @@ is in combination with baseline covariates inside a risk model (not as a simple 
         st.markdown("---")
         st.subheader("Best model (based on test ROC AUC)")
         st.write(best)
-
+        
+        st.markdown(
+            """
+Although Neural Network (MLP, tuned) achieved the highest ROC AUC (0.7444), we would however prefer Logistic Regression (ROC AUC = 0.7443) over the Neural Network. That is because of its:
+* **Interpretability**: Coefficients clearly show feature impact on the outcome.
+* **Simplicity**: Easier to implement, train, and debug.
+* **Data efficiency**: Performs well with less data, reducing overfitting risk.
+* **Lower computational cost**: Requires fewer resources for training and deployment.
+Neural Networks perform well with very complex patterns and large amounts of data, but their 'black box' nature and higher demands can be drawbacks.
+"""
+    )
+        
 
 # --- App entry point
 st.set_page_config(page_title="Framingham ΔPP & CVD", layout="wide")
