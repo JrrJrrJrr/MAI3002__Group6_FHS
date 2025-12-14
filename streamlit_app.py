@@ -355,7 +355,10 @@ The final analytic dataset represents individuals with:
     st.markdown(
         """
 a mean increase of 3.82 mmHg (and a median of 3.0). 
-This indicates that, on average, Pulse Pressure is widening between visits. This is biologically consistent with the aging process, as arteries tend to stiffen over time, naturally increasing pulse pressure in the general population.
+This indicates that, on average, Pulse Pressure is widening between visits. 
+This is biologically consistent with the aging process, as arteries tend to stiffen over time, naturally increasing pulse pressure in the general population.
+"""
+    )
 
     fig, ax = plt.subplots(figsize=(6, 4))
     sns.histplot(analytic_df["DELTA_PP"], bins=30, kde=True, ax=ax)
