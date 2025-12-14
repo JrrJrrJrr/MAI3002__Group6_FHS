@@ -431,7 +431,7 @@ Independent of sex, participants who developed CVD show consistently larger incr
     st.markdown(
         """
 This **correlation matrix** shows that ΔPP provides **added value**. 
-While baseline systolic and diastolic BP are strongly correlated (as expected), ΔPP shows low correlations with baseline BP and age. 
+While baseline systolic and diastolic BP are strongly correlated (as expected), ΔPP shows low correlations with baseline BP. 
 This indicates that ΔPP captures an independent physiological change over time, rather than duplicating baseline information, making it a meaningful and informative feature for the model.
 """
     )
