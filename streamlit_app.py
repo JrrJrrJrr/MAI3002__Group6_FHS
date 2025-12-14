@@ -357,6 +357,7 @@ The final analytic dataset represents individuals with:
 There is a mean increase of 3.87 mmHg (and a median of 3.0). 
 This indicates that, on average, Pulse Pressure is widening between visits. 
 This is biologically consistent with the aging process, as arteries tend to stiffen over time, naturally increasing pulse pressure in the general population.
+
 Remarkable is a standard Deviation of 12.7. This value is large relative to the mean.
 It tells us that although the mean increase is modest, individual changes in pulse pressure vary widely.
 This high variance suggests that ΔPP is a *discriminating* feature, which is beneficial for the model. 
