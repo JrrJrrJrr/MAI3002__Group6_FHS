@@ -136,7 +136,7 @@ def page_overview(raw_df, analytic_df):
 1. **Does the association between ΔPP and CVD differ for women vs men?** (interaction test)
 2. **Does a clinically simple threshold in ΔPP identify higher CVD risk by Visit 3?** (threshold explorer)
 
-### Data & design (what we actually did)
+### Data & design 
 - Framingham dataset is **long format**: multiple rows per participant across **PERIOD 1–3**.
 - We built an **analytic dataset (wide + engineered)**:
   - **One row per participant**
@@ -166,7 +166,7 @@ def page_overview(raw_df, analytic_df):
         st.write(f"Analytic CVD prevalence: **{prev:.1f}%**")
 
     st.markdown("---")
-    st.subheader("Methods summary (what we claim we did)")
+    st.subheader("Methods summary")
 
     st.markdown(
         """
