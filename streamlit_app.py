@@ -331,6 +331,7 @@ def page_delta_pp(analytic_df):
     st.markdown(
         """
 The **change in pulse pressure** over time (ΔPP) can be a *predictor* of future CVD events. A significant increase or decrease in PP between visits could indicate changes in cardiovascular health status. The focus is on the change between visit 1 and visit 2 to predict CVD outcomes at Visit 3.
+
 The final analytic dataset contains 3206 participants and 13 features, representing individuals with:
 * Complete BP data at Visits 1 & 2 (to compute ΔPP)
 * Observed CVD outcome by Visit 3
