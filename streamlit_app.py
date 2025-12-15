@@ -1036,6 +1036,7 @@ Although Neural Network (MLP, tuned) achieved the highest ROC AUC (0.7444), we w
 * **Simplicity**: Easier to implement, train, and debug.
 * **Data efficiency**: Performs well with less data, reducing overfitting risk.
 * **Lower computational cost**: Requires fewer resources for training and deployment.
+
 Neural Networks perform well with very complex patterns and large amounts of data, but their 'black box' nature and higher demands can be drawbacks.
 """
     )
