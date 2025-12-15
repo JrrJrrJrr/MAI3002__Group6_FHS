@@ -746,7 +746,7 @@ The CVD group shows a slightly higher median increase in pulse pressure and grea
     st.markdown(
         """
 This stays consistent if we stratify by gender. 
-Independent of sex, participants who developed CVD show consistently larger increases in pulse pressure.
+Independent of sex, participants who developed CVD show slightly larger increases in pulse pressure.
 """
     )
 
