@@ -30,8 +30,8 @@ except Exception:
 
 # --- Global style + ONE palette everywhere
 sns.set_style("whitegrid")
-PALETTE = sns.color_palette("crest", 8)
-CREST_CMAP = sns.color_palette("crest", as_cmap=True)
+PALETTE = sns.color_palette("viridis", 8)
+CREST_CMAP = sns.color_palette("viridis", as_cmap=True)
 PERIOD_PALETTE = {1: PALETTE[2], 2: PALETTE[4], 3: PALETTE[6]}
 
 
@@ -790,7 +790,7 @@ This indicates that ΔPP captures an independent physiological change over time,
                 hue=color_by,
                 alpha=0.6,
                 ax=ax,
-                palette="crest",
+                palette="viridis",
             )
             sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))
         else:
@@ -858,7 +858,7 @@ def page_models_overview(model_results):
             style="Type",
             s=90,
             ax=ax,
-            palette="crest",
+            palette="viridis",
         )
         ax.set_xlabel("ROC AUC")
         ax.set_ylabel("Accuracy")
