@@ -60,13 +60,13 @@ def load_raw_framingham():
 # --- Load project outputs exported from Colab (cached)
 @st.cache_data
 def load_project_outputs():
-        """
-        analytic_df : pd.DataFrame
-        Cleaned analytic dataset (one row per participant).
-        model_results : pd.DataFrame
-        Summary table comparing model performance.
-        all_model_outputs : dict
-        Stored test predictions and metrics per model.
+    """
+    analytic_df : pd.DataFrame
+    Cleaned analytic dataset (one row per participant).
+    model_results : pd.DataFrame
+    Summary table comparing model performance.
+    all_model_outputs : dict
+    Stored test predictions and metrics per model.
     """
     analytic_df = pd.read_csv("analytic_dataset.csv")
     model_results = pd.read_csv("model_results.csv")
@@ -213,7 +213,7 @@ def compute_threshold_metrics(y_true, y_proba, threshold):
 
 # --- Helper: ROC plot (palette-consistent)
 def plot_roc(y_test, y_proba):
-      """
+    """
     The ROC curve visualizes the trade-off between sensitivity
     and specificity across all classification thresholds.
     """
