@@ -985,8 +985,6 @@ A multivariable approach is more realistic than using ΔPP alone.
 ### Subquestion 1 (sex differences)
 We used an interaction term (ΔPP × sex). 
 Non-significant -> it suggested no statistical evidence for sex effect modification in our model.
-We tested an interaction term (ΔPP × sex). If non-significant, this suggests
-no evidence that the ΔPP slope differs by sex in our model.
 
 ### Subquestion 2 (clinical threshold)
 Threshold exploration shows the expected trade-off:
@@ -1012,6 +1010,7 @@ Although Neural Network (MLP, tuned) achieved the highest ROC AUC (0.7444), we w
 * **Simplicity**: Easier to implement, train, and debug.
 * **Data efficiency**: Performs well with less data, reducing overfitting risk.
 * **Lower computational cost**: Requires fewer resources for training and deployment.
+
 Neural Networks perform well with very complex patterns and large amounts of data, but their 'black box' nature and higher demands can be drawbacks.
 """
     )
