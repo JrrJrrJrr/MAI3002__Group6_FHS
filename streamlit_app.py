@@ -249,7 +249,6 @@ Can changes in pulse pressure between Visit 1 and Visit 2 (ΔPP) predict whether
 
 **Subquestions**  
 1) Does the ΔPP–CVD association differ by sex? (ΔPP × sex interaction)  
-2) Can a simple ΔPP threshold separate higher vs lower CVD risk? (threshold explorer)
 
 **Study design and data flow**  
 The Framingham dataset is in **long format** (multiple rows per participant across PERIOD 1–3).  
@@ -332,30 +331,6 @@ We constructed an **analytic dataset** with **one row per participant**, contain
     ax.set_title("Participant inclusion funnel")
     plt.tight_layout()
     st.pyplot(fig)
-
-    st.markdown("---")
-
-    # --- Outcome balance context
-    st.subheader("Outcome balance (analytic)")
-
-    if "CVD" in analytic_df.columns:
-        prev = float(analytic_df["CVD"].mean())
-        majority_acc = max(prev, 1 - prev)
-
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            st.metric("CVD positive rate", f"{prev*100:.1f}%")
-        with c2:
-            st.metric("Majority-class baseline accuracy", f"{majority_acc:.3f}")
-        with c3:
-            st.metric("Why ROC AUC?", "Threshold-free")
-
-        st.caption(
-            "Accuracy can look good even when a model is weak, simply because CVD is relatively rare. "
-            "ROC AUC evaluates discrimination without committing to a single threshold."
-        )
-    else:
-        st.info("CVD column not found in analytic dataset.")
 
     st.markdown("---")
 
@@ -909,7 +884,9 @@ def page_interaction_test(analytic_df):
 
     st.markdown(
         """
-We test whether the association between ΔPP and CVD differs by sex
+**Is the association between ΔPP and CVD different for women vs men?**
+
+We tested whether the association between ΔPP and CVD differs by sex
 using a logistic regression interaction model.
 
 **Model form**  
@@ -983,13 +960,10 @@ This indicates that ΔPP does contribute to some predictive signal, but overall 
 A multivariable approach is more realistic than using ΔPP alone.
 
 ### Subquestion 1 (sex differences)
+**Is the association between ΔPP and CVD different for women vs men?**
+
 We used an interaction term (ΔPP × sex). 
 Non-significant -> it suggested no statistical evidence for sex effect modification in our model.
-
-### Subquestion 2 (clinical threshold)
-Threshold exploration shows the expected trade-off:
-- lower threshold → higher sensitivity, lower precision
-- higher threshold → higher precision, lower sensitivity
 
 ### Overall conclusion
 ΔPP is meaningful as a longitudinal vascular marker, but its practical value
