@@ -650,6 +650,18 @@ def page_delta_pp(analytic_df):
         st.error("Analytic dataset missing DELTA_PP.")
         return
 
+    st.markdown(
+        """
+The **change in pulse pressure** over time (ΔPP) can be a *predictor* of future CVD events. 
+A significant increase or decrease in PP between visits could indicate changes in cardiovascular health status. 
+The focus is on the change between visit 1 and visit 2 to predict CVD outcomes at visit 3.
+
+The final analytic dataset represents individuals with:
+* Complete BP data at Visits 1 & 2 (to compute ΔPP)
+* Observed CVD outcome by Visit 3
+"""
+    )
+
     c1, c2 = st.columns(2)
     with c1:
         st.write(f"Rows × columns: `{analytic_df.shape[0]:,}` × `{analytic_df.shape[1]}`")
@@ -659,8 +671,21 @@ def page_delta_pp(analytic_df):
             st.write(f"CVD prevalence: **{prev:.1f}%**")
 
     st.markdown("---")
-    st.subheader("ΔPP distribution")
+    st.subheader("ΔPP summary statistics ")
     st.write(analytic_df["DELTA_PP"].describe().round(2))
+
+    st.markdown(
+        """
+There is a **mean** increase of **3.87** mmHg (and a **median** of **3.0**). 
+This indicates that, on average, pulse pressure is widening between visits. 
+This is biologically consistent with the aging process, as arteries tend to stiffen over time, naturally increasing pulse pressure in the general population.
+
+Remarkable is a **standard deviation** of **12.23**. This value is large relative to the mean.
+It tells us that although the mean increase is modest, individual changes in pulse pressure vary widely.
+This high variance suggests that ΔPP is a *discriminating* feature, which is beneficial for the model. 
+If ΔPP changed by the same amount for every participant, the variable would have no predictive power.
+"""
+    )
 
     fig, ax = plt.subplots(figsize=(6, 4))
     sns.histplot(analytic_df["DELTA_PP"], bins=30, kde=True, ax=ax, color=solid_color(4))
@@ -668,6 +693,12 @@ def page_delta_pp(analytic_df):
     ax.set_title("Distribution of ΔPP")
     plt.tight_layout()
     st.pyplot(fig)
+
+    st.markdown(
+        """
+The distribution is slightly skewed to the right and displays this wide variance. 
+"""
+    )
 
     st.markdown("---")
     st.subheader("ΔPP vs CVD")
@@ -679,7 +710,13 @@ def page_delta_pp(analytic_df):
         ax.set_title("ΔPP by CVD outcome")
         plt.tight_layout()
         st.pyplot(fig)
-
+        
+    st.markdown(
+        """
+The CVD group shows a slightly higher median increase in pulse pressure and greater variability.
+"""
+    )
+    
     if "V1_SEX" in analytic_df.columns and "CVD" in analytic_df.columns:
         fig, ax = plt.subplots(figsize=(7, 4))
         sns.boxplot(
@@ -695,6 +732,13 @@ def page_delta_pp(analytic_df):
         ax.set_title("ΔPP by sex and CVD")
         plt.tight_layout()
         st.pyplot(fig)
+
+    st.markdown(
+        """
+This stays consistent if we stratify by gender. 
+Independent of sex, participants who developed CVD show consistently larger increases in pulse pressure.
+"""
+    )
 
     st.markdown("---")
     st.subheader("Correlations (baseline + ΔPP)")
@@ -712,6 +756,14 @@ def page_delta_pp(analytic_df):
         ax.set_title("Correlation matrix")
         plt.tight_layout()
         st.pyplot(fig)
+
+    st.markdown(
+        """
+This **correlation matrix** shows that ΔPP provides **added value**. 
+While baseline systolic and diastolic BP are strongly correlated (as expected), ΔPP shows low correlations with baseline BP. 
+This indicates that ΔPP captures an independent physiological change over time, rather than duplicating baseline information, making it a meaningful and informative feature for the model.
+"""
+    )
 
     st.markdown("---")
     st.subheader("Interactive scatter")
@@ -949,10 +1001,14 @@ def page_final_recap(model_results):
 ### Main research question
 **Can changes in pulse pressure between Visit 1 and Visit 2 predict CVD by Visit 3?**
 
+The models, which included ΔPP, achieved ROC AUC scores significantly higher than the baseline (0.5), reaching up to 0.744.
+This indicates that ΔPP does contribute to some predictive signal, but overall performance is still moderate.
 ΔPP contributes some predictive signal, but overall predictive performance is moderate.
 A multivariable approach is more realistic than using ΔPP alone.
 
 ### Subquestion 1 (sex differences)
+We used an interaction term (ΔPP × sex). 
+Non-significant -> it suggested no statistical evidence for sex effect modification in our model.
 We tested an interaction term (ΔPP × sex). If non-significant, this suggests
 no evidence that the ΔPP slope differs by sex in our model.
 
@@ -972,7 +1028,18 @@ is in combination with baseline covariates inside a risk model (not as a simple 
         st.markdown("---")
         st.subheader("Best model (based on test ROC AUC)")
         st.write(best)
-
+        
+        st.markdown(
+            """
+Although Neural Network (MLP, tuned) achieved the highest ROC AUC (0.7444), we would however prefer Logistic Regression (ROC AUC = 0.7443) over the Neural Network. That is because of its:
+* **Interpretability**: Coefficients clearly show feature impact on the outcome.
+* **Simplicity**: Easier to implement, train, and debug.
+* **Data efficiency**: Performs well with less data, reducing overfitting risk.
+* **Lower computational cost**: Requires fewer resources for training and deployment.
+Neural Networks perform well with very complex patterns and large amounts of data, but their 'black box' nature and higher demands can be drawbacks.
+"""
+    )
+        
 
 # --- App entry point
 st.set_page_config(page_title="Framingham ΔPP & CVD", layout="wide")
