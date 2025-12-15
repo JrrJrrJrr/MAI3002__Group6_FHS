@@ -129,7 +129,7 @@ section[data-testid="stSidebar"] .nav-active .stButton > button {
 
         pages = [
             "1) Overview",
-            "2) Raw EDA (long data)",
+            "2) Exploratory data analysis",
             "3) ΔPP & analytic exploration",
             "4) Model comparison",
             "5) Model detail + threshold",
@@ -1000,13 +1000,13 @@ page = sidebar_block_and_nav()
 
 if page == "1) Overview":
     page_overview(raw_df, analytic_df)
-elif page == "2) Raw EDA (long data)":
+elif page == "2) Exploratory data analysis":
     page_eda_raw(raw_df)
 elif page == "3) ΔPP & analytic exploration":
     page_delta_pp(analytic_df)
 elif page == "4) Model comparison":
     page_models_overview(model_results)
-elif page == "5) Model detail + threshold":
+elif page == "5) Model detail":
     page_model_detail(all_model_outputs)
 elif page == "6) Interaction test (ΔPP × sex)":
     page_interaction_test(analytic_df)
