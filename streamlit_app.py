@@ -162,7 +162,7 @@ section[data-testid="stSidebar"] .nav-active .stButton > button {
         st.markdown("### Project information")
 
         st.image(
-            asset_path("um-logo"),
+            asset_path("/workspaces/MAI3002__Group6_FHS/assets/um-logo.png"),
             caption="Maastricht University",
             use_container_width=True,
         )
@@ -579,7 +579,7 @@ Focus: visit coverage (PERIOD), missingness patterns, and distributions.
     st.markdown("---")
     st.subheader("Winsorising outliers (capping)")
     st.image(
-        asset_path("capped"),
+        asset_path("/workspaces/MAI3002__Group6_FHS/assets/capped.png"),
         use_container_width=True,
     )
 
