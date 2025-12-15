@@ -1009,8 +1009,6 @@ A multivariable approach is more realistic than using ΔPP alone.
 ### Subquestion 1 (sex differences)
 We used an interaction term (ΔPP × sex). 
 Non-significant -> it suggested no statistical evidence for sex effect modification in our model.
-We tested an interaction term (ΔPP × sex). If non-significant, this suggests
-no evidence that the ΔPP slope differs by sex in our model.
 
 ### Subquestion 2 (clinical threshold)
 Threshold exploration shows the expected trade-off:
