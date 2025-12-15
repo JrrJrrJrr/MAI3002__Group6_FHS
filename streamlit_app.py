@@ -1,5 +1,6 @@
 # streamlit_app.py
-#imports
+
+# imports
 import os
 import numpy as np
 import pandas as pd
@@ -44,12 +45,21 @@ def solid_color(i=4):
     return PALETTE[i]
 
 
-# --- Load raw data (long format) from GitHub (cached)
-# --- Streamlit caching is used to prevent unnecessary reloading
+def asset_path(stem, assets_dir="/workspaces/MAI3002__Group6_FHS/assets"):
+    """
+    Return the first existing asset path for a given filename stem.
+    Example: stem='capped' -> tries capped.png / capped.jpg / capped.jpeg
+    """
+    for ext in [".png", ".jpg", ".jpeg"]:
+        p = os.path.join(assets_dir, f"{stem}{ext}")
+        if os.path.exists(p):
+            return p
+    return os.path.join(assets_dir, stem)  # fallback (will error visibly if missing)
 
+
+# --- Load raw data (long format) from GitHub (cached)
 @st.cache_data
 def load_raw_framingham():
-    # --- Load the raw Framingham dataset (long format) from GitHub.
     url = (
         "https://raw.githubusercontent.com/"
         "LUCE-Blockchain/Databases-for-teaching/"
@@ -152,7 +162,7 @@ section[data-testid="stSidebar"] .nav-active .stButton > button {
         st.markdown("### Project information")
 
         st.image(
-            "/workspaces/MAI3002__Group6_FHS/assets/um-logo.png",
+            asset_path("um-logo"),
             caption="Maastricht University",
             use_container_width=True,
         )
@@ -171,18 +181,17 @@ section[data-testid="stSidebar"] .nav-active .stButton > button {
 
     return st.session_state.page
 
+
 # --- Helper: recompute confusion matrix + metrics for a custom threshold
 def compute_threshold_metrics(y_true, y_proba, threshold):
     y_true = np.asarray(y_true).astype(int)
     y_proba = np.asarray(y_proba)
-    
-    # Convert probabilities to class predictions
+
     y_pred_thr = (y_proba >= threshold).astype(int)
 
     cm = confusion_matrix(y_true, y_pred_thr)
     acc = accuracy_score(y_true, y_pred_thr)
 
-    # AUC uses probabilities (threshold-free)
     try:
         auc = roc_auc_score(y_true, y_proba)
     except Exception:
@@ -206,10 +215,6 @@ def compute_threshold_metrics(y_true, y_proba, threshold):
 
 # --- Helper: ROC plot (palette-consistent)
 def plot_roc(y_test, y_proba):
-    """
-    The ROC curve visualizes the trade-off between sensitivity
-    and specificity across all classification thresholds.
-    """
     fpr, tpr, _ = roc_curve(y_test, y_proba)
     auc_val = roc_auc_score(y_test, y_proba)
 
@@ -256,8 +261,7 @@ def plot_calibration(y_test, y_proba, bins=10):
 # --- Page 1: overview + text + funnel + imbalance context (palette-consistent)
 def page_overview(raw_df, analytic_df):
     st.header("Project overview")
-    
-    # --- Research question & study design explanation
+
     st.markdown(
         """
 **Main research question**  
@@ -284,7 +288,6 @@ We constructed an **analytic dataset** with **one row per participant**, contain
 
     st.markdown("---")
 
-    # --- Quick dataset metrics
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         st.metric("Raw rows (long)", f"{len(raw_df):,}")
@@ -300,36 +303,29 @@ We constructed an **analytic dataset** with **one row per participant**, contain
 
     st.markdown("---")
 
-    # --- Inclusion funnel
-    # Shows how many participants remain after each selection step
     st.subheader("Analytic sample construction (inclusion funnel)")
 
     n_raw = raw_df["RANDID"].nunique()
 
-    # Compute pulse pressure where SBP and DBP are available
     needed_cols = ["RANDID", "PERIOD", "SYSBP", "DIABP"]
     tmp = raw_df[needed_cols].dropna().copy()
     tmp["PP"] = tmp["SYSBP"] - tmp["DIABP"]
 
-    # Reshape to wide format to identify participants with PP at Visit 1 & 2
     pp_wide = (
         tmp.drop_duplicates(["RANDID", "PERIOD"])
            .pivot(index="RANDID", columns="PERIOD", values="PP")
     )
     n_pp12 = pp_wide.dropna(subset=[1, 2]).shape[0]
-    
-    # Count participants with observed CVD outcome at Visit 3
+
     if "CVD" in raw_df.columns:
         n_cvd3 = (
             raw_df.loc[raw_df["PERIOD"] == 3, ["RANDID", "CVD"]]
-            .dropna()
-            ["RANDID"]
+            .dropna()["RANDID"]
             .nunique()
         )
     else:
         n_cvd3 = np.nan
-        
-    # Final analytic sample size
+
     if "RANDID" in analytic_df.columns:
         n_analytic = analytic_df["RANDID"].nunique()
     else:
@@ -347,7 +343,6 @@ We constructed an **analytic dataset** with **one row per participant**, contain
 
     st.dataframe(funnel, use_container_width=True)
 
-     # Visual funnel representation
     fig, ax = plt.subplots(figsize=(8, 3.2))
     sns.barplot(data=funnel, x="N", y="Step", ax=ax, color=solid_color(4))
     ax.set_title("Participant inclusion funnel")
@@ -356,7 +351,6 @@ We constructed an **analytic dataset** with **one row per participant**, contain
 
     st.markdown("---")
 
-    # --- Quick look at analytic dataset structure
     st.subheader("Quick snapshot of analytic dataset")
     with st.expander("Show first 10 rows"):
         st.dataframe(analytic_df.head(10), use_container_width=True)
@@ -365,14 +359,15 @@ We constructed an **analytic dataset** with **one row per participant**, contain
         st.write(list(analytic_df.columns))
 
 
-# --- Page 2: raw EDA (palette-consistent + added sanity checks)
-def page_eda_raw(raw_df):
+# --- Page 2: EDA (adds the single capped figure from assets)
+def page_eda_raw(raw_df, analytic_df):
     st.header("Exploratory data analysis – raw Framingham dataset (long format)")
 
     st.markdown(
         """
 This page summarizes the **raw longitudinal structure** (multiple rows per participant).  
-Focus: visit coverage (PERIOD), missingness patterns, and a focused set of distributions.
+Focus: visit coverage (PERIOD), missingness patterns, and distributions.  
+**Important:** we also show how preprocessing (imputation + winsorisation) affected key variables.
 """
     )
 
@@ -429,14 +424,12 @@ Focus: visit coverage (PERIOD), missingness patterns, and a focused set of distr
     plt.tight_layout()
     st.pyplot(fig)
 
-    st.caption(
-        "Note: the dataframe index is not '0 visits'. The table means: N participants with 1 / 2 / 3 observed PERIODs."
-    )
+    st.caption("Table shows N participants with 1 / 2 / 3 observed PERIODs.")
 
     st.markdown("---")
 
-    # --- Visit coverage by PERIOD (sanity check)
-    st.subheader("Visit coverage by PERIOD (sanity check)")
+    # --- Visit coverage by PERIOD
+    st.subheader("Visit coverage by PERIOD")
 
     coverage = (
         raw_df.drop_duplicates(["RANDID", "PERIOD"])
@@ -463,15 +456,10 @@ Focus: visit coverage (PERIOD), missingness patterns, and a focused set of distr
     plt.tight_layout()
     st.pyplot(fig)
 
-    st.caption(
-        "This explains why '3 visits' can be the largest group: many participants have complete records across PERIOD 1–3, "
-        "while fewer have missing PERIODs."
-    )
-
     st.markdown("---")
 
     # --- Outcome prevalence across PERIODs
-    st.subheader("Outcome signal across PERIODs (sanity check)")
+    st.subheader("Outcome signal across PERIODs")
 
     if "CVD" in raw_df.columns:
         cvd_by_period = (
@@ -532,6 +520,7 @@ Focus: visit coverage (PERIOD), missingness patterns, and a focused set of distr
         "Variables to include",
         options=sorted(raw_df.columns),
         default=defaults,
+        key="eda_missingness_cols",
     )
 
     if selected_cols:
@@ -566,6 +555,7 @@ Focus: visit coverage (PERIOD), missingness patterns, and a focused set of distr
         "Pick numeric variables to plot",
         options=candidate_nums,
         default=[c for c in ["SYSBP", "DIABP", "BMI", "TOTCHOL"] if c in candidate_nums],
+        key="eda_core_nums",
     )
 
     if chosen:
@@ -585,13 +575,20 @@ Focus: visit coverage (PERIOD), missingness patterns, and a focused set of distr
             plt.tight_layout()
             st.pyplot(fig)
 
+    # --- NEW: add the single capped figure from assets
     st.markdown("---")
+    st.subheader("Winsorising outliers (capping)")
+    st.image(
+        asset_path("capped"),
+        use_container_width=True,
+    )
 
     # --- Patient trajectories (example)
+    st.markdown("---")
     st.subheader("Individual patient trajectories (example)")
 
     ids = sorted(raw_df["RANDID"].unique())
-    selected_id = st.selectbox("Select RANDID", options=ids)
+    selected_id = st.selectbox("Select RANDID", options=ids, key="eda_rand_select")
 
     user_data = raw_df[raw_df["RANDID"] == selected_id].sort_values("PERIOD")
 
@@ -601,7 +598,6 @@ Focus: visit coverage (PERIOD), missingness patterns, and a focused set of distr
 
     fig, axes = plt.subplots(1, 3, figsize=(14, 4))
 
-    # Blood pressure
     if "SYSBP" in user_data.columns and "DIABP" in user_data.columns:
         axes[0].plot(user_data["PERIOD"], user_data["SYSBP"], marker="o", color=solid_color(6), label="SYSBP")
         axes[0].plot(user_data["PERIOD"], user_data["DIABP"], marker="o", color=solid_color(3), label="DIABP")
@@ -613,7 +609,6 @@ Focus: visit coverage (PERIOD), missingness patterns, and a focused set of distr
     else:
         axes[0].axis("off")
 
-    # BMI
     if "BMI" in user_data.columns and user_data["BMI"].notna().any():
         axes[1].plot(user_data["PERIOD"], user_data["BMI"], marker="s", linestyle="--", color=solid_color(4))
         axes[1].set_title("BMI")
@@ -623,7 +618,6 @@ Focus: visit coverage (PERIOD), missingness patterns, and a focused set of distr
     else:
         axes[1].axis("off")
 
-    # Cholesterol
     if "TOTCHOL" in user_data.columns and user_data["TOTCHOL"].notna().any():
         axes[2].plot(user_data["PERIOD"], user_data["TOTCHOL"], marker="^", color=solid_color(4))
         axes[2].set_title("Total cholesterol")
@@ -643,12 +637,10 @@ Focus: visit coverage (PERIOD), missingness patterns, and a focused set of distr
 def page_delta_pp(analytic_df):
     st.header("ΔPP & analytic dataset exploration")
 
-    # Safety check: ΔPP must exist in analytic dataset
     if "DELTA_PP" not in analytic_df.columns:
         st.error("Analytic dataset missing DELTA_PP.")
         return
-        
-     # Conceptual explanation of ΔPP and analytic sample construction
+
     st.markdown(
         """
 The **change in pulse pressure** over time (ΔPP) can be a *predictor* of future CVD events. 
@@ -661,7 +653,6 @@ The final analytic dataset represents individuals with:
 """
     )
 
-    # Basic dataset characteristics
     c1, c2 = st.columns(2)
     with c1:
         st.write(f"Rows × columns: `{analytic_df.shape[0]:,}` × `{analytic_df.shape[1]}`")
@@ -670,7 +661,6 @@ The final analytic dataset represents individuals with:
             prev = analytic_df["CVD"].mean() * 100
             st.write(f"CVD prevalence: **{prev:.1f}%**")
 
-    # ΔPP distribution and summary statistics
     st.markdown("---")
     st.subheader("ΔPP summary statistics ")
     st.write(analytic_df["DELTA_PP"].describe().round(2))
@@ -679,16 +669,13 @@ The final analytic dataset represents individuals with:
         """
 There is a **mean** increase of **3.87** mmHg (and a **median** of **3.0**). 
 This indicates that, on average, pulse pressure is widening between visits. 
-This is biologically consistent with the aging process, as arteries tend to stiffen over time, naturally increasing pulse pressure in the general population.
+This is biologically consistent with the aging process.
 
 Remarkable is a **standard deviation** of **12.23**. This value is large relative to the mean.
 It tells us that although the mean increase is modest, individual changes in pulse pressure vary widely.
-This high variance suggests that ΔPP is a *discriminating* feature, which is beneficial for the model. 
-If ΔPP changed by the same amount for every participant, the variable would have no predictive power.
 """
     )
 
-    # Histogram of ΔPP
     fig, ax = plt.subplots(figsize=(6, 4))
     sns.histplot(analytic_df["DELTA_PP"], bins=30, kde=True, ax=ax, color=solid_color(4))
     ax.set_xlabel("ΔPP (PP₂ − PP₁, mmHg)")
@@ -696,13 +683,6 @@ If ΔPP changed by the same amount for every participant, the variable would hav
     plt.tight_layout()
     st.pyplot(fig)
 
-    st.markdown(
-        """
-The distribution is slightly skewed to the right and displays this wide variance. 
-"""
-    )
-
-    # ΔPP stratified by CVD outcome
     st.markdown("---")
     st.subheader("ΔPP vs CVD")
     if "CVD" in analytic_df.columns:
@@ -713,13 +693,7 @@ The distribution is slightly skewed to the right and displays this wide variance
         ax.set_title("ΔPP by CVD outcome")
         plt.tight_layout()
         st.pyplot(fig)
-        
-    st.markdown(
-        """
-The CVD group shows a slightly higher median increase in pulse pressure and greater variability.
-"""
-    )
-    # ΔPP by sex and CVD
+
     if "V1_SEX" in analytic_df.columns and "CVD" in analytic_df.columns:
         fig, ax = plt.subplots(figsize=(7, 4))
         sns.boxplot(
@@ -736,18 +710,9 @@ The CVD group shows a slightly higher median increase in pulse pressure and grea
         plt.tight_layout()
         st.pyplot(fig)
 
-    st.markdown(
-        """
-This stays consistent if we stratify by gender. 
-Independent of sex, participants who developed CVD show slightly larger increases in pulse pressure.
-"""
-    )
-
-    # Correlation analysis
     st.markdown("---")
     st.subheader("Correlations (baseline + ΔPP)")
 
-    # Select relevant numeric variables if present
     corr_vars = [c for c in [
         "DELTA_PP", "V1_AGE", "V1_BMI", "V1_SYSBP", "V1_DIABP",
         "V1_GLUCOSE", "V1_TOTCHOL", "V1_CIGPDAY"
@@ -763,15 +728,6 @@ Independent of sex, participants who developed CVD show slightly larger increase
         plt.tight_layout()
         st.pyplot(fig)
 
-    st.markdown(
-        """
-This **correlation matrix** shows that ΔPP provides **added value**. 
-While baseline systolic and diastolic BP are strongly correlated (as expected), ΔPP shows low correlations with baseline BP. 
-This indicates that ΔPP captures an independent physiological change over time, rather than duplicating baseline information, making it a meaningful and informative feature for the model.
-"""
-    )
-
-    # Interactive scatter exploration
     st.markdown("---")
     st.subheader("Interactive scatter")
     numeric_cols = analytic_df.select_dtypes(include=[np.number]).columns.tolist()
@@ -824,7 +780,6 @@ def page_models_overview(model_results):
         st.error("model_results.csv not loaded or empty.")
         return
 
-    # Sort by ROC AUC if available
     if "ROC_AUC" in model_results.columns:
         model_results_sorted = model_results.sort_values("ROC_AUC", ascending=False).reset_index(drop=True)
     else:
@@ -837,7 +792,6 @@ def page_models_overview(model_results):
 
     c1, c2 = st.columns(2)
 
-    # Accuracy barplot
     with c1:
         st.subheader("Accuracy (test)")
         fig, ax = plt.subplots(figsize=(6, 4))
@@ -846,7 +800,6 @@ def page_models_overview(model_results):
         plt.tight_layout()
         st.pyplot(fig)
 
-     # ROC AUC barplot
     with c2:
         st.subheader("ROC AUC (test)")
         fig, ax = plt.subplots(figsize=(6, 4))
@@ -855,7 +808,6 @@ def page_models_overview(model_results):
         plt.tight_layout()
         st.pyplot(fig)
 
-     # Accuracy vs ROC AUC scatter
     st.markdown("---")
 
     if "Type" in model_results_sorted.columns:
@@ -883,15 +835,12 @@ def page_models_overview(model_results):
 def page_model_detail(all_model_outputs):
     st.header("Model detail + threshold explorer")
 
-     # Select model to inspect
     model_name = st.selectbox("Select model", list(all_model_outputs.keys()))
     res = all_model_outputs[model_name]
 
-    # Extract test labels and predicted probabilities
     y_test = np.asarray(res["y_test"]).astype(int)
     y_proba = np.asarray(res["y_proba"])
 
-    # Stored base performance metrics
     st.subheader("Base performance (stored)")
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -901,7 +850,7 @@ def page_model_detail(all_model_outputs):
     with c3:
         cv = res.get("cv_best_auc", np.nan)
         st.metric("CV Best AUC", f"{cv:.3f}" if pd.notna(cv) else "–")
-    # ROC, PR, and calibration 
+
     st.markdown("---")
     st.subheader("ROC / PR / Calibration (test set)")
 
@@ -912,17 +861,16 @@ def page_model_detail(all_model_outputs):
     with c2:
         st.write("Precision–Recall curve")
         plot_pr(y_test, y_proba)
-        
-    # Calibration curve with adjustable binning
+
     st.markdown("---")
     bins = st.slider("Calibration bins", 5, 20, 10)
     plot_calibration(y_test, y_proba, bins=bins)
+
 
 # --- Page 6: interaction test (ΔPP × sex)
 def page_interaction_test(analytic_df):
     st.header("Subquestion 1: Interaction test (ΔPP × sex)")
 
-    # Conceptual explanation of interaction analysis
     st.markdown(
         """
 **Is the association between ΔPP and CVD different for women vs men?**
@@ -938,18 +886,15 @@ This is an **association analysis**, not a causal claim.
 """
     )
 
-    # Check availability of statsmodels for inference
     if not HAS_STATSMODELS:
         st.error("statsmodels is not installed in this environment, so p-values/robust SE cannot be computed here.")
         st.info("Fix: `pip install statsmodels` in your environment, or run this page locally where statsmodels exists.")
         return
 
-    # Required predictors and potential confounders
     required = ["CVD", "DELTA_PP", "V1_SEX"]
     controls = ["V1_AGE", "V1_BMI", "V1_SYSBP", "V1_DIABP", "V1_GLUCOSE", "V1_TOTCHOL", "V1_CIGPDAY"]
     controls = [c for c in controls if c in analytic_df.columns]
 
-    # Safety check for required variables
     missing = [c for c in required if c not in analytic_df.columns]
     if missing:
         st.error(f"Analytic dataset missing required columns: {missing}")
@@ -962,7 +907,6 @@ This is an **association analysis**, not a causal claim.
     X = sm.add_constant(X, has_constant="add")
     y = df["CVD"].astype(int)
 
-    # --- Fit interaction model with robust SE
     try:
         model = sm.Logit(y, X).fit(cov_type="HC3", disp=False)
 
@@ -1001,7 +945,6 @@ def page_final_recap(model_results):
 
 The models, which included ΔPP, achieved ROC AUC scores significantly higher than the baseline (0.5), reaching up to 0.744.
 This indicates that ΔPP does contribute to some predictive signal, but overall performance is still moderate.
-ΔPP contributes some predictive signal, but overall predictive performance is moderate.
 A multivariable approach is more realistic than using ΔPP alone.
 
 ### Subquestion 1 (sex differences)
@@ -1016,25 +959,22 @@ is in combination with baseline covariates inside a risk model (not as a simple 
 """
     )
 
-    # Highlight best-performing model
     if model_results is not None and not model_results.empty and "ROC_AUC" in model_results.columns:
         best = model_results.sort_values("ROC_AUC", ascending=False).iloc[0]
         st.markdown("---")
         st.subheader("Best model (based on test ROC AUC)")
         st.write(best)
-        
+
         st.markdown(
             """
 Although Neural Network (MLP, tuned) achieved the highest ROC AUC (0.7444), we would however prefer Logistic Regression (ROC AUC = 0.7443) over the Neural Network. That is because of its:
-* **Interpretability**: Coefficients clearly show feature impact on the outcome.
-* **Simplicity**: Easier to implement, train, and debug.
-* **Data efficiency**: Performs well with less data, reducing overfitting risk.
-* **Lower computational cost**: Requires fewer resources for training and deployment.
-
-Neural Networks perform well with very complex patterns and large amounts of data, but their 'black box' nature and higher demands can be drawbacks.
+* **Interpretability**: Coefficients clearly show feature impact on the outcome.
+* **Simplicity**: Easier to implement, train, and debug.
+* **Data efficiency**: Performs well with less data, reducing overfitting risk.
+* **Lower computational cost**: Requires fewer resources for training and deployment.
 """
-    )
-        
+        )
+
 
 # --- App entry point
 st.set_page_config(page_title="Framingham ΔPP & CVD", layout="wide")
@@ -1047,12 +987,12 @@ page = sidebar_block_and_nav()
 if page == "1) Overview":
     page_overview(raw_df, analytic_df)
 elif page == "2) Exploratory data analysis":
-    page_eda_raw(raw_df)
+    page_eda_raw(raw_df, analytic_df)
 elif page == "3) ΔPP & analytic exploration":
     page_delta_pp(analytic_df)
 elif page == "4) Model comparison":
     page_models_overview(model_results)
-elif page == "5) Model detail":
+elif page == "5) Model details":
     page_model_detail(all_model_outputs)
 elif page == "6) Interaction test (ΔPP × sex)":
     page_interaction_test(analytic_df)
