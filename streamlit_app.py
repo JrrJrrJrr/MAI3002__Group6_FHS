@@ -1,5 +1,5 @@
 # streamlit_app.py
-
+#imports
 import numpy as np
 import pandas as pd
 import joblib
@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
 
+# Scikit-learn metrics for model evaluation
 from sklearn.metrics import (
     confusion_matrix,
     ConfusionMatrixDisplay,
@@ -28,10 +29,12 @@ except Exception:
     HAS_STATSMODELS = False
 
 
-# --- Global style + ONE palette everywhere
+# --- Global style and color + ONE palette everywhere for consistency
 sns.set_style("whitegrid")
 PALETTE = sns.color_palette("viridis", 8)
 CREST_CMAP = sns.color_palette("viridis", as_cmap=True)
+
+# --- Fixed colors per visit period (used in longitudinal plots)
 PERIOD_PALETTE = {1: PALETTE[2], 2: PALETTE[4], 3: PALETTE[6]}
 
 
@@ -41,8 +44,11 @@ def solid_color(i=4):
 
 
 # --- Load raw data (long format) from GitHub (cached)
+# --- Streamlit caching is used to prevent unnecessary reloading
+
 @st.cache_data
 def load_raw_framingham():
+    # --- Load the raw Framingham dataset (long format) from GitHub.
     url = (
         "https://raw.githubusercontent.com/"
         "LUCE-Blockchain/Databases-for-teaching/"
@@ -54,6 +60,14 @@ def load_raw_framingham():
 # --- Load project outputs exported from Colab (cached)
 @st.cache_data
 def load_project_outputs():
+        """
+    analytic_df : pd.DataFrame
+        Cleaned analytic dataset (one row per participant).
+    model_results : pd.DataFrame
+        Summary table comparing model performance.
+    all_model_outputs : dict
+        Stored test predictions and metrics per model.
+    """
     analytic_df = pd.read_csv("analytic_dataset.csv")
     model_results = pd.read_csv("model_results.csv")
     all_model_outputs = joblib.load("all_model_outputs.pkl")
@@ -62,6 +76,8 @@ def load_project_outputs():
 
 # --- Sidebar: project info + vertical segmented control (buttons)
 def sidebar_block_and_nav():
+    
+    # Custom CSS for sidebar styling
     st.markdown(
         """
 <style>
@@ -105,13 +121,13 @@ section[data-testid="stSidebar"] .nav-active .stButton > button {
     with st.sidebar:
         st.markdown("### Project information")
 
-        # Placeholder image (replace with your own file later if you want)
+        # Placeholder image UM Logo
         st.image(
             "https://via.placeholder.com/300x120.png?text=Maastricht+University",
             caption="Maastricht University",
             use_container_width=True,
         )
-
+# Course and student information
         st.markdown(
             """
 **Course:** MAI3002  
@@ -136,10 +152,11 @@ section[data-testid="stSidebar"] .nav-active .stButton > button {
             "6) Interaction test (ΔPP × sex)",
             "7) Final RQ recap",
         ]
-
+        # Initialize page state
         if "page" not in st.session_state:
             st.session_state.page = pages[0]
-
+            
+        # Render navigation buttens
         for i, p in enumerate(pages):
             classes = []
             if i == 0:
@@ -165,7 +182,8 @@ section[data-testid="stSidebar"] .nav-active .stButton > button {
 def compute_threshold_metrics(y_true, y_proba, threshold):
     y_true = np.asarray(y_true).astype(int)
     y_proba = np.asarray(y_proba)
-
+    
+    # Convert probabilities to class predictions
     y_pred_thr = (y_proba >= threshold).astype(int)
 
     cm = confusion_matrix(y_true, y_pred_thr)
@@ -195,6 +213,10 @@ def compute_threshold_metrics(y_true, y_proba, threshold):
 
 # --- Helper: ROC plot (palette-consistent)
 def plot_roc(y_test, y_proba):
+      """
+    The ROC curve visualizes the trade-off between sensitivity
+    and specificity across all classification thresholds.
+    """
     fpr, tpr, _ = roc_curve(y_test, y_proba)
     auc_val = roc_auc_score(y_test, y_proba)
 
@@ -241,7 +263,8 @@ def plot_calibration(y_test, y_proba, bins=10):
 # --- Page 1: overview + text + funnel + imbalance context (palette-consistent)
 def page_overview(raw_df, analytic_df):
     st.header("Project overview")
-
+    
+    # --- Research question & study design explanation
     st.markdown(
         """
 **Main research question**  
@@ -285,20 +308,24 @@ We constructed an **analytic dataset** with **one row per participant**, contain
     st.markdown("---")
 
     # --- Inclusion funnel
+    # Shows how many participants remain after each selection step
     st.subheader("Analytic sample construction (inclusion funnel)")
 
     n_raw = raw_df["RANDID"].nunique()
 
+    # Compute pulse pressure where SBP and DBP are available
     needed_cols = ["RANDID", "PERIOD", "SYSBP", "DIABP"]
     tmp = raw_df[needed_cols].dropna().copy()
     tmp["PP"] = tmp["SYSBP"] - tmp["DIABP"]
 
+    # Reshape to wide format to identify participants with PP at Visit 1 & 2
     pp_wide = (
         tmp.drop_duplicates(["RANDID", "PERIOD"])
            .pivot(index="RANDID", columns="PERIOD", values="PP")
     )
     n_pp12 = pp_wide.dropna(subset=[1, 2]).shape[0]
-
+    
+    # Count participants with observed CVD outcome at Visit 3
     if "CVD" in raw_df.columns:
         n_cvd3 = (
             raw_df.loc[raw_df["PERIOD"] == 3, ["RANDID", "CVD"]]
@@ -308,7 +335,8 @@ We constructed an **analytic dataset** with **one row per participant**, contain
         )
     else:
         n_cvd3 = np.nan
-
+        
+    # Final analytic sample size
     if "RANDID" in analytic_df.columns:
         n_analytic = analytic_df["RANDID"].nunique()
     else:
@@ -326,6 +354,7 @@ We constructed an **analytic dataset** with **one row per participant**, contain
 
     st.dataframe(funnel, use_container_width=True)
 
+     # Visual funnel representation
     fig, ax = plt.subplots(figsize=(8, 3.2))
     sns.barplot(data=funnel, x="N", y="Step", ax=ax, color=solid_color(4))
     ax.set_title("Participant inclusion funnel")
@@ -334,7 +363,7 @@ We constructed an **analytic dataset** with **one row per participant**, contain
 
     st.markdown("---")
 
-    # --- Quick glance
+    # --- Quick look at analytic dataset structure
     st.subheader("Quick snapshot of analytic dataset")
     with st.expander("Show first 10 rows"):
         st.dataframe(analytic_df.head(10), use_container_width=True)
@@ -383,7 +412,7 @@ Focus: visit coverage (PERIOD), missingness patterns, and a focused set of distr
 
     st.markdown("---")
 
-    # --- Visits per participant
+    # --- Number of visits per participant
     st.subheader("Visits per participant (longitudinal completeness)")
 
     visits_per_person = (
@@ -448,7 +477,7 @@ Focus: visit coverage (PERIOD), missingness patterns, and a focused set of distr
 
     st.markdown("---")
 
-    # --- CVD by PERIOD (sanity check for outcome timing)
+    # --- Outcome prevalence across PERIODs
     st.subheader("Outcome signal across PERIODs (sanity check)")
 
     if "CVD" in raw_df.columns:
@@ -500,7 +529,7 @@ Focus: visit coverage (PERIOD), missingness patterns, and a focused set of distr
 
     st.markdown("---")
 
-    # --- Missingness by PERIOD heatmap (user-selected)
+    # --- Missingness by PERIOD heatmap (user-selected variables)
     st.subheader("Missingness by PERIOD (selected variables)")
 
     default_cols = ["LDLC", "HDLC", "GLUCOSE", "BPMEDS", "TOTCHOL", "educ", "CIGPDAY", "BMI", "HEARTRTE"]
@@ -621,10 +650,12 @@ Focus: visit coverage (PERIOD), missingness patterns, and a focused set of distr
 def page_delta_pp(analytic_df):
     st.header("ΔPP & analytic dataset exploration")
 
+    # Safety check: ΔPP must exist in analytic dataset
     if "DELTA_PP" not in analytic_df.columns:
         st.error("Analytic dataset missing DELTA_PP.")
         return
-
+        
+     # Conceptual explanation of ΔPP and analytic sample construction
     st.markdown(
         """
 The **change in pulse pressure** over time (ΔPP) can be a *predictor* of future CVD events. 
@@ -637,6 +668,7 @@ The final analytic dataset represents individuals with:
 """
     )
 
+    # Basic dataset characteristics
     c1, c2 = st.columns(2)
     with c1:
         st.write(f"Rows × columns: `{analytic_df.shape[0]:,}` × `{analytic_df.shape[1]}`")
@@ -645,6 +677,7 @@ The final analytic dataset represents individuals with:
             prev = analytic_df["CVD"].mean() * 100
             st.write(f"CVD prevalence: **{prev:.1f}%**")
 
+    # ΔPP distribution and summary statistics
     st.markdown("---")
     st.subheader("ΔPP summary statistics ")
     st.write(analytic_df["DELTA_PP"].describe().round(2))
@@ -662,6 +695,7 @@ If ΔPP changed by the same amount for every participant, the variable would hav
 """
     )
 
+    # Histogram of ΔPP
     fig, ax = plt.subplots(figsize=(6, 4))
     sns.histplot(analytic_df["DELTA_PP"], bins=30, kde=True, ax=ax, color=solid_color(4))
     ax.set_xlabel("ΔPP (PP₂ − PP₁, mmHg)")
@@ -675,6 +709,7 @@ The distribution is slightly skewed to the right and displays this wide variance
 """
     )
 
+    # ΔPP stratified by CVD outcome
     st.markdown("---")
     st.subheader("ΔPP vs CVD")
     if "CVD" in analytic_df.columns:
@@ -691,7 +726,7 @@ The distribution is slightly skewed to the right and displays this wide variance
 The CVD group shows a slightly higher median increase in pulse pressure and greater variability.
 """
     )
-    
+    # ΔPP by sex and CVD
     if "V1_SEX" in analytic_df.columns and "CVD" in analytic_df.columns:
         fig, ax = plt.subplots(figsize=(7, 4))
         sns.boxplot(
@@ -715,8 +750,11 @@ Independent of sex, participants who developed CVD show consistently larger incr
 """
     )
 
+    # Correlation analysis
     st.markdown("---")
     st.subheader("Correlations (baseline + ΔPP)")
+
+    # Select relevant numeric variables if present
     corr_vars = [c for c in [
         "DELTA_PP", "V1_AGE", "V1_BMI", "V1_SYSBP", "V1_DIABP",
         "V1_GLUCOSE", "V1_TOTCHOL", "V1_CIGPDAY"
@@ -740,6 +778,7 @@ This indicates that ΔPP captures an independent physiological change over time,
 """
     )
 
+    # Interactive scatter exploration
     st.markdown("---")
     st.subheader("Interactive scatter")
     numeric_cols = analytic_df.select_dtypes(include=[np.number]).columns.tolist()
@@ -792,6 +831,7 @@ def page_models_overview(model_results):
         st.error("model_results.csv not loaded or empty.")
         return
 
+    # Sort by ROC AUC if available
     if "ROC_AUC" in model_results.columns:
         model_results_sorted = model_results.sort_values("ROC_AUC", ascending=False).reset_index(drop=True)
     else:
@@ -804,6 +844,7 @@ def page_models_overview(model_results):
 
     c1, c2 = st.columns(2)
 
+    # Accuracy barplot
     with c1:
         st.subheader("Accuracy (test)")
         fig, ax = plt.subplots(figsize=(6, 4))
@@ -812,6 +853,7 @@ def page_models_overview(model_results):
         plt.tight_layout()
         st.pyplot(fig)
 
+     # ROC AUC barplot
     with c2:
         st.subheader("ROC AUC (test)")
         fig, ax = plt.subplots(figsize=(6, 4))
@@ -820,6 +862,7 @@ def page_models_overview(model_results):
         plt.tight_layout()
         st.pyplot(fig)
 
+     # Accuracy vs ROC AUC scatter
     st.markdown("---")
 
     if "Type" in model_results_sorted.columns:
@@ -847,12 +890,15 @@ def page_models_overview(model_results):
 def page_model_detail(all_model_outputs):
     st.header("Model detail + threshold explorer")
 
+     # Select model to inspect
     model_name = st.selectbox("Select model", list(all_model_outputs.keys()))
     res = all_model_outputs[model_name]
 
+    # Extract test labels and predicted probabilities
     y_test = np.asarray(res["y_test"]).astype(int)
     y_proba = np.asarray(res["y_proba"])
 
+    # Stored base performance metrics
     st.subheader("Base performance (stored)")
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -862,7 +908,7 @@ def page_model_detail(all_model_outputs):
     with c3:
         cv = res.get("cv_best_auc", np.nan)
         st.metric("CV Best AUC", f"{cv:.3f}" if pd.notna(cv) else "–")
-
+    # ROC, PR, and calibration 
     st.markdown("---")
     st.subheader("ROC / PR / Calibration (test set)")
 
@@ -873,15 +919,17 @@ def page_model_detail(all_model_outputs):
     with c2:
         st.write("Precision–Recall curve")
         plot_pr(y_test, y_proba)
-
+        
+    # Calibration curve with adjustable binning
     st.markdown("---")
     bins = st.slider("Calibration bins", 5, 20, 10)
     plot_calibration(y_test, y_proba, bins=bins)
 
-# --- Page 6: interaction test (robust SE if statsmodels exists)
+# --- Page 6: interaction test (ΔPP × sex)
 def page_interaction_test(analytic_df):
     st.header("Subquestion 1: Interaction test (ΔPP × sex)")
 
+    # Conceptual explanation of interaction analysis
     st.markdown(
         """
 **Is the association between ΔPP and CVD different for women vs men?**
@@ -897,15 +945,18 @@ This is an **association analysis**, not a causal claim.
 """
     )
 
+    # Check availability of statsmodels for inference
     if not HAS_STATSMODELS:
         st.error("statsmodels is not installed in this environment, so p-values/robust SE cannot be computed here.")
         st.info("Fix: `pip install statsmodels` in your environment, or run this page locally where statsmodels exists.")
         return
 
+    # Required predictors and potential confounders
     required = ["CVD", "DELTA_PP", "V1_SEX"]
     controls = ["V1_AGE", "V1_BMI", "V1_SYSBP", "V1_DIABP", "V1_GLUCOSE", "V1_TOTCHOL", "V1_CIGPDAY"]
     controls = [c for c in controls if c in analytic_df.columns]
 
+    # Safety check for required variables
     missing = [c for c in required if c not in analytic_df.columns]
     if missing:
         st.error(f"Analytic dataset missing required columns: {missing}")
@@ -918,6 +969,7 @@ This is an **association analysis**, not a causal claim.
     X = sm.add_constant(X, has_constant="add")
     y = df["CVD"].astype(int)
 
+    # --- Fit interaction model with robust SE
     try:
         model = sm.Logit(y, X).fit(cov_type="HC3", disp=False)
 
@@ -971,6 +1023,7 @@ is in combination with baseline covariates inside a risk model (not as a simple 
 """
     )
 
+    # Highlight best-performing model
     if model_results is not None and not model_results.empty and "ROC_AUC" in model_results.columns:
         best = model_results.sort_values("ROC_AUC", ascending=False).iloc[0]
         st.markdown("---")
