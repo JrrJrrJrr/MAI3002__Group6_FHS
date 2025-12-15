@@ -77,12 +77,11 @@ def load_project_outputs():
 
 # --- Sidebar: project info + vertical segmented control (buttons)
 def sidebar_block_and_nav():
-    
+
     # Custom CSS for sidebar styling
     st.markdown(
         """
 <style>
-/* Sidebar buttons styled as a connected vertical segmented control */
 section[data-testid="stSidebar"] .stButton > button {
     width: 100%;
     border-radius: 0px;
@@ -92,13 +91,10 @@ section[data-testid="stSidebar"] .stButton > button {
     background: rgba(255,255,255,0.0);
     text-align: left;
 }
-
 section[data-testid="stSidebar"] .stButton > button:hover {
     border-color: rgba(49, 51, 63, 0.45);
     background: rgba(49, 51, 63, 0.04);
 }
-
-/* Rounded corners only for first + last */
 section[data-testid="stSidebar"] .nav-first .stButton > button {
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
@@ -107,8 +103,6 @@ section[data-testid="stSidebar"] .nav-last .stButton > button {
     border-bottom-left-radius: 12px;
     border-bottom-right-radius: 12px;
 }
-
-/* Active state */
 section[data-testid="stSidebar"] .nav-active .stButton > button {
     font-weight: 800;
     border-color: rgba(49, 51, 63, 0.60) !important;
@@ -119,69 +113,63 @@ section[data-testid="stSidebar"] .nav-active .stButton > button {
         unsafe_allow_html=True,
     )
 
+    pages = [
+        "1) Overview",
+        "2) Exploratory data analysis",
+        "3) ΔPP & analytic exploration",
+        "4) Model comparison",
+        "5) Model details",
+        "6) Interaction test (ΔPP × sex)",
+        "7) Final RQ recap",
+    ]
+
+    # Initialize page state
+    if "page" not in st.session_state:
+        st.session_state.page = pages[0]
+
     with st.sidebar:
         st.markdown("### Navigation")
 
-        pages = [
-            "1) Overview",
-            "2) Exploratory data analysis",
-            "3) ΔPP & analytic exploration",
-            "4) Model comparison",
-            "5) Model details",
-            "6) Interaction test (ΔPP × sex)",
-            "7) Final RQ recap",
-        ]
+        for i, p in enumerate(pages):
+            classes = []
+            if i == 0:
+                classes.append("nav-first")
+            if i == len(pages) - 1:
+                classes.append("nav-last")
+            if st.session_state.page == p:
+                classes.append("nav-active")
 
+            cls = " ".join(classes)
+            st.markdown(f'<div class="{cls}">', unsafe_allow_html=True)
+
+            if st.button(p, key=f"nav_{p}"):
+                st.session_state.page = p
+                st.rerun()
+
+            st.markdown("</div>", unsafe_allow_html=True)
 
         st.markdown("---")
         st.markdown("### Project information")
 
-        # UM Logo   
         st.image(
             "/workspaces/MAI3002__Group6_FHS/assets/um-logo.png",
             caption="Maastricht University",
             use_container_width=True,
         )
-        
-        # Course and student information
+
         st.markdown(
-                """
-    **Course:** MAI3002  
-    **Course name:** Introduction to Programming in Python  
+            """
+**Course:** MAI3002  
+**Course name:** Introduction to Programming in Python  
 
-    **Students:**
-    - Cleo Habets — `i6337758`  
-    - Jerrica Pubben — `i6276134`  
-    - Noura al Sayed — `i6359287`
-    """
-            )
+**Students:**
+- Cleo Habets — `i6337758`  
+- Jerrica Pubben — `i6276134`  
+- Noura al Sayed — `i6359287`
+"""
+        )
 
-
-# Initialize page state
-if "page" not in st.session_state:
-    st.session_state.page = pages[0]
-    
-# Render navigation buttons
-for i, p in enumerate(pages):
-    classes = []
-    if i == 0:
-        classes.append("nav-first")
-    if i == len(pages) - 1:
-        classes.append("nav-last")
-    if st.session_state.page == p:
-        classes.append("nav-active")
-
-    cls = " ".join(classes)
-    st.markdown(f'<div class="{cls}">', unsafe_allow_html=True)
-    clicked = st.button(p, key=f"nav_{p}")
-    st.markdown("</div>", unsafe_allow_html=True)
-
-if clicked:
-    st.session_state.page = p
-    st.rerun()
-    
-return st.session_state.page
-
+    return st.session_state.page
 
 # --- Helper: recompute confusion matrix + metrics for a custom threshold
 def compute_threshold_metrics(y_true, y_proba, threshold):
