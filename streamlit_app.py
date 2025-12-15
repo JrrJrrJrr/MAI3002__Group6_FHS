@@ -61,11 +61,11 @@ def load_raw_framingham():
 @st.cache_data
 def load_project_outputs():
         """
-    analytic_df : pd.DataFrame
+        analytic_df : pd.DataFrame
         Cleaned analytic dataset (one row per participant).
-    model_results : pd.DataFrame
+        model_results : pd.DataFrame
         Summary table comparing model performance.
-    all_model_outputs : dict
+        all_model_outputs : dict
         Stored test predictions and metrics per model.
     """
     analytic_df = pd.read_csv("analytic_dataset.csv")
