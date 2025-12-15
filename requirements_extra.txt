@@ -1,4 +1,0 @@
-scikit-learn
-imbalanced-learn
-pandas
-plotly

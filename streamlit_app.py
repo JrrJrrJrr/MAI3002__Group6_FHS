@@ -1,5 +1,6 @@
 # streamlit_app.py
 #imports
+import os
 import numpy as np
 import pandas as pd
 import joblib
@@ -119,28 +120,6 @@ section[data-testid="stSidebar"] .nav-active .stButton > button {
     )
 
     with st.sidebar:
-        st.markdown("### Project information")
-
-        # Placeholder image UM Logo
-        st.image(
-            "https://via.placeholder.com/300x120.png?text=Maastricht+University",
-            caption="Maastricht University",
-            use_container_width=True,
-        )
-# Course and student information
-        st.markdown(
-            """
-**Course:** MAI3002  
-**Course name:** Introduction to Programming in Python  
-
-**Students:**
-- Cleo Habets — `i6337758`  
-- Jerrica Pubben — `i6276134`  
-- Noura al Sayed — `i6359287`
-"""
-        )
-
-        st.markdown("---")
         st.markdown("### Navigation")
 
         pages = [
@@ -148,34 +127,60 @@ section[data-testid="stSidebar"] .nav-active .stButton > button {
             "2) Exploratory data analysis",
             "3) ΔPP & analytic exploration",
             "4) Model comparison",
-            "5) Model detail + threshold",
+            "5) Model details",
             "6) Interaction test (ΔPP × sex)",
             "7) Final RQ recap",
         ]
-        # Initialize page state
-        if "page" not in st.session_state:
-            st.session_state.page = pages[0]
-            
-        # Render navigation buttens
-        for i, p in enumerate(pages):
-            classes = []
-            if i == 0:
-                classes.append("nav-first")
-            if i == len(pages) - 1:
-                classes.append("nav-last")
-            if st.session_state.page == p:
-                classes.append("nav-active")
 
-            cls = " ".join(classes)
-            st.markdown(f'<div class="{cls}">', unsafe_allow_html=True)
-            clicked = st.button(p, key=f"nav_{p}")
-            st.markdown("</div>", unsafe_allow_html=True)
 
-            if clicked:
-                st.session_state.page = p
-                st.rerun()
+        st.markdown("---")
+        st.markdown("### Project information")
 
-        return st.session_state.page
+        # UM Logo   
+        st.image(
+            "/workspaces/MAI3002__Group6_FHS/assets/um-logo.png",
+            caption="Maastricht University",
+            use_container_width=True,
+        )
+        
+        # Course and student information
+        st.markdown(
+                """
+    **Course:** MAI3002  
+    **Course name:** Introduction to Programming in Python  
+
+    **Students:**
+    - Cleo Habets — `i6337758`  
+    - Jerrica Pubben — `i6276134`  
+    - Noura al Sayed — `i6359287`
+    """
+            )
+
+
+# Initialize page state
+if "page" not in st.session_state:
+    st.session_state.page = pages[0]
+    
+# Render navigation buttons
+for i, p in enumerate(pages):
+    classes = []
+    if i == 0:
+        classes.append("nav-first")
+    if i == len(pages) - 1:
+        classes.append("nav-last")
+    if st.session_state.page == p:
+        classes.append("nav-active")
+
+    cls = " ".join(classes)
+    st.markdown(f'<div class="{cls}">', unsafe_allow_html=True)
+    clicked = st.button(p, key=f"nav_{p}")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+if clicked:
+    st.session_state.page = p
+    st.rerun()
+    
+return st.session_state.page
 
 
 # --- Helper: recompute confusion matrix + metrics for a custom threshold
