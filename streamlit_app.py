@@ -889,29 +889,6 @@ def page_model_detail(all_model_outputs):
         st.metric("CV Best AUC", f"{cv:.3f}" if pd.notna(cv) else "–")
 
     st.markdown("---")
-
-    st.subheader("Threshold explorer")
-    thr = st.slider("Decision threshold", 0.05, 0.95, 0.50, 0.01)
-    m = compute_threshold_metrics(y_test, y_proba, thr)
-
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        st.metric("Accuracy", f"{m['accuracy']:.3f}")
-    with c2:
-        st.metric("Sensitivity", f"{m['sensitivity']:.3f}" if pd.notna(m["sensitivity"]) else "–")
-    with c3:
-        st.metric("Specificity", f"{m['specificity']:.3f}" if pd.notna(m["specificity"]) else "–")
-    with c4:
-        st.metric("Precision", f"{m['precision']:.3f}" if pd.notna(m["precision"]) else "–")
-
-    st.write("Confusion matrix (at chosen threshold):")
-    fig, ax = plt.subplots(figsize=(4, 4))
-    disp = ConfusionMatrixDisplay(confusion_matrix=m["cm"])
-    disp.plot(ax=ax, values_format="d", cmap=CREST_CMAP, colorbar=False)
-    plt.tight_layout()
-    st.pyplot(fig)
-
-    st.markdown("---")
     st.subheader("ROC / PR / Calibration (test set)")
 
     c1, c2 = st.columns(2)
@@ -925,7 +902,6 @@ def page_model_detail(all_model_outputs):
     st.markdown("---")
     bins = st.slider("Calibration bins", 5, 20, 10)
     plot_calibration(y_test, y_proba, bins=bins)
-
 
 # --- Page 6: interaction test (robust SE if statsmodels exists)
 def page_interaction_test(analytic_df):
