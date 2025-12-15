@@ -22,6 +22,11 @@ from sklearn.metrics import (
 )
 from sklearn.calibration import calibration_curve
 
+def asset_path(filename: str) -> str:
+    """Absolute path to a file inside ./assets, portable across local + Streamlit Cloud."""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_dir, "assets", filename)
+
 # --- Statsmodels is optional (some environments don't have it)
 try:
     import statsmodels.api as sm
@@ -161,11 +166,11 @@ section[data-testid="stSidebar"] .nav-active .stButton > button {
         st.markdown("---")
         st.markdown("### Project information")
 
-        st.image(
-            asset_path("/workspaces/MAI3002__Group6_FHS/assets/um-logo.png"),
-            caption="Maastricht University",
-            use_container_width=True,
-        )
+        logo_path = asset_path("um-logo.png")
+        if os.path.exists(logo_path):
+            st.image(logo_path, caption="Maastricht University", use_container_width=True)
+        else:
+            st.warning("Missing asset: assets/um-logo.png")
 
         st.markdown(
             """
@@ -575,13 +580,16 @@ Focus: visit coverage (PERIOD), missingness patterns, and distributions.
             plt.tight_layout()
             st.pyplot(fig)
 
-    # --- NEW: add the single capped figure from assets
     st.markdown("---")
-    st.subheader("Winsorising outliers (capping)")
-    st.image(
-        asset_path("/workspaces/MAI3002__Group6_FHS/assets/capped.png"),
-        use_container_width=True,
-    )
+
+    # --- Capped figure (assets/capped.png)
+    st.subheader("Outlier handling (capping / winsorisation)")
+
+    capped_path = os.path.join("assets", "capped.png")
+    if os.path.exists(capped_path):
+        st.image(capped_path, caption="Capping / winsorisation overview", use_container_width=True)
+    else:
+        st.warning("Missing asset: assets/capped.png")
 
     # --- Patient trajectories (example)
     st.markdown("---")
@@ -631,7 +639,6 @@ Focus: visit coverage (PERIOD), missingness patterns, and distributions.
     fig.suptitle(f"Trajectory for RANDID {selected_id} (CVD by Visit 3: {has_cvd})")
     plt.tight_layout()
     st.pyplot(fig)
-
 
 # --- Page 3: analytic / ΔPP exploration (palette-consistent)
 def page_delta_pp(analytic_df):
