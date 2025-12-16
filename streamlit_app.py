@@ -950,8 +950,7 @@ def page_final_recap(model_results):
 ### Main research question
 **Can changes in pulse pressure between Visit 1 and Visit 2 predict CVD by Visit 3?**
 
-The models, which included ΔPP, achieved ROC AUC scores significantly higher than the baseline (0.5), reaching up to 0.744.
-This indicates that ΔPP does contribute to some predictive signal, but overall performance is still moderate.
+Our findings indicate that ΔPP does contribute to some predictive signal, but overall performance is still moderate.
 A multivariable approach is more realistic than using ΔPP alone.
 
 ### Subquestion 1 (sex differences)
